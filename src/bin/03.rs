@@ -80,12 +80,12 @@ fn parse_integer_pair(input: &str) -> IResult<&str, (u32, u32)> {
     separated_pair(u32, tag(","), u32)(input)
 }
 
-fn parse_x(input: &str) -> IResult<&str, (u32, u32)> {
+fn search_mul(input: &str) -> IResult<&str, (u32, u32)> {
     let (remaining, _) = take_until("mul(")(input)?;
     // println!("{:?}", remaining);
     let mut result = parse_multiply(remaining);
     while let Err(nom::Err::Error(ref e)) = result {
-        result = parse_x(e.input);
+        result = search_mul(e.input);
     }
     result
 }
@@ -99,7 +99,7 @@ fn parse_dont(input: &str) -> IResult<&str, ()> {
 }
 
 fn part1_parser(input: &str) -> IResult<&str, Vec<(u32, u32)>> {
-    many0(parse_x)(input)
+    many0(search_mul)(input)
 }
 
 // fn part2_parser(input: &str) -> IResult<&str, Vec<(u32, u32)>> {
@@ -119,7 +119,7 @@ mod tests {
     fn test_parse_multiply() {
         let (r, p) = parse_multiply(r"mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))").unwrap();
         assert_eq!(r, "+mul(32,64](mul(11,8)undo()?mul(8,5))");
-        assert_eq!(p, (5,5));
+        assert_eq!(p, (5, 5));
     }
 
     #[test]
