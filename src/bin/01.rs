@@ -73,15 +73,15 @@ fn main() -> Result<()> {
 }
 
 fn read<R: BufRead>(reader: R) -> Result<(Vec<usize>, Vec<usize>)> {
-    let mut left: Vec<usize> = Vec::new();
-    let mut right: Vec<usize> = Vec::new();
-    for result in reader.lines() {
-        let line = result?;
-
-        let mut iter = line.split_whitespace();
-
-        left.push(iter.next().unwrap().parse::<usize>()?);
-        right.push(iter.next().unwrap().parse::<usize>()?);
-    }
-    Ok((left, right))
+    Ok(reader
+        .lines()
+        .map(|l| {
+            let line = l.unwrap();
+            let mut parts = line.split_whitespace();
+            (
+                parts.next().unwrap().parse::<usize>().unwrap(),
+                parts.next().unwrap().parse::<usize>().unwrap(),
+            )
+        })
+        .unzip())
 }
