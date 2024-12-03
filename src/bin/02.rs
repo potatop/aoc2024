@@ -17,12 +17,6 @@ const TEST: &str = "\
 8 6 4 4 1
 1 3 6 7 9
 ";
-#[derive(PartialEq)]
-enum Direction {
-    FW,
-    RW,
-    INIT,
-}
 
 fn main() -> Result<()> {
     start_day(DAY);
@@ -44,7 +38,7 @@ fn main() -> Result<()> {
                 while let Some(cur) = iter.next() {
                     if let Some(&n0) = iter.peek() {
                         if let Some(&n1) = iter.peek() {
-                            if let None = is_safe_with_direction(cur, n0, n1) {
+                            if let None = is_safe_with_signum(cur, n0, n1) {
                                 return false;
                             }
                         }
@@ -101,7 +95,7 @@ fn part2_is_safe(row: &mut Vec<i32>) -> bool {
         let &cur = row.get(i).unwrap();
         let &n0 = row.get(i + 1).unwrap();
         let &n1 = row.get(i + 2).unwrap();
-        if let Some(s) = is_safe_with_direction(cur, n0, n1) {
+        if let Some(s) = is_safe_with_signum(cur, n0, n1) {
             if *signum.get_or_insert(s) == s {
                 continue;
             }
@@ -114,19 +108,19 @@ fn part2_is_safe(row: &mut Vec<i32>) -> bool {
             return true;
         }
         let &z = row.get(i + 3).unwrap();
-        if let Some(s) = is_safe_with_direction(n0, n1, z) {
+        if let Some(s) = is_safe_with_signum(n0, n1, z) {
             if *signum.get_or_insert(s) == s {
                 continue;
             }
         }
 
-        if let Some(s) = is_safe_with_direction(cur, n1, z) {
+        if let Some(s) = is_safe_with_signum(cur, n1, z) {
             row[i + 1] = cur;
             if *signum.get_or_insert(s) == s {
                 continue;
             }
         }
-        if let Some(s) = is_safe_with_direction(cur, n0, z) {
+        if let Some(s) = is_safe_with_signum(cur, n0, z) {
             row[i + 1] = cur;
             row[i + 2] = n0;
             if *signum.get_or_insert(s) == s {
@@ -137,7 +131,7 @@ fn part2_is_safe(row: &mut Vec<i32>) -> bool {
     true
 }
 
-fn is_safe_with_direction(a: i32, b: i32, c: i32) -> Option<i32> {
+fn is_safe_with_signum(a: i32, b: i32, c: i32) -> Option<i32> {
     let d1 = a.abs_diff(b);
     let d2 = b.abs_diff(c);
     let s1 = (a - b).signum();
