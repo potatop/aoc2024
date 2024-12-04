@@ -2,9 +2,9 @@ use adv_code_2024::*;
 use anyhow::*;
 use code_timing_macros::time_snippet;
 use const_format::concatcp;
-use nom::bytes::complete::{tag, take_until};
+use nom::bytes::complete::{tag, take_till, take_until};
 use nom::character::complete::u32;
-use nom::combinator::value;
+use nom::combinator::{peek, recognize, value};
 use nom::multi::many0;
 use nom::sequence::{delimited, separated_pair, tuple};
 use nom::IResult;
@@ -50,27 +50,23 @@ fn main() -> Result<()> {
     //endregion
 
     //region Part 2
-    // println!("\n=== Part 2 ===");
+    println!("\n=== Part 2 ===");
+    fn part2<R: BufRead>(mut reader: R) -> Result<usize> {
+        let mut string = String::new();
+        reader.read_to_string(&mut string)?;
 
-    // fn part2<R: BufRead>(reader: R) -> Result<usize> {
-    //     let answer: u32 = reader
-    //         .lines()
-    //         .flat_map(|l| {
-    //             let line = l.unwrap();
-    //             let (_, list) = part2_parser(&line).unwrap();
-    //             list
-    //         })
-    //         .map(|(a, b)| a * b)
-    //         .sum();
+        let (_, list) = part2_parser(&string).expect("cannot read string");
 
-    //     Ok(answer as usize)
-    // }
+        let answer: u32 = list.iter().map(|(a, b)| a * b).sum();
 
-    // assert_eq!(48, part2(BufReader::new(TEST2.as_bytes()))?);
+        Ok(answer as usize)
+    }
 
-    // let input_file = BufReader::new(File::open(INPUT_FILE)?);
-    // let result = time_snippet!(part2(input_file)?);
-    // println!("Result = {}", result);
+    assert_eq!(48, part2(BufReader::new(TEST2.as_bytes()))?);
+
+    let input_file = BufReader::new(File::open(INPUT_FILE)?);
+    let result = time_snippet!(part2(input_file)?);
+    println!("Result = {}", result);
     //endregion
 
     Ok(())
@@ -102,14 +98,54 @@ fn part1_parser(input: &str) -> IResult<&str, Vec<(u32, u32)>> {
     many0(search_mul)(input)
 }
 
-// fn part2_parser(input: &str) -> IResult<&str, Vec<(u32, u32)>> {
-//     let mut vec: Vec<(u32, u32)> = Vec::new();
-//     let (remaining, pair) = parse_x(input)?;
-//     vec.push(pair);
-//     let (remaining, mut list) = many0(alt((parse_dont, parse_x)))(remaining)?;
-//     vec.append(&mut list);
-//     std::result::Result::Ok((remaining, vec))
-// }
+fn part2_parser(input: &str) -> IResult<&str, Vec<(u32, u32)>> {
+    let mut res = Vec::new();
+    let (mut remaining, (_, p)) = tuple((parse_junk, parse_multiply))(input)?;
+    // println!("******{:?}", remaining);
+    // println!("######{:?}", p);
+    res.push(p);
+
+    loop {
+        (remaining, _) = parse_junk(remaining)?;
+        // println!("******{:?}", remaining);
+
+        if let Result::Ok((rem, mul_input)) = recognize(parse_multiply)(remaining) {
+            let (_, p) = parse_multiply(mul_input)?;
+            // println!("######{:?}", p);
+            res.push(p);
+            remaining = rem;
+        } else if let Result::Ok((rem, _)) = recognize(parse_dont)(remaining) {
+            remaining = rem;
+        } else {
+            break;
+        }
+    }
+
+    Result::Ok((remaining, res))
+}
+
+fn parse_junk(input: &str) -> IResult<&str, ()> {
+    let (remaining, _) = value((), take_till(|c| c == 'm' || c == 'd'))(input)?;
+
+    if remaining.starts_with("m") {
+        if peek(parse_multiply)(remaining).is_ok() {
+            return Result::Ok((remaining, ()));
+        }
+        return parse_junk(&remaining[1..]);
+    }
+    let res: IResult<&str, &str> = tag("don't()")(remaining);
+    if let Result::Ok((rem, _)) = res {
+        let res: IResult<&str, &str> = take_until("do()")(rem);
+        return match res {
+            Result::Ok(_) => Result::Ok((remaining, ())),
+            Err(_) => Result::Ok(("", ())),
+        };
+    } else if remaining.starts_with("d") {
+        return parse_junk(&remaining[1..]);
+    }
+    assert!(remaining.is_empty());
+    Result::Ok((remaining, ()))
+}
 
 #[cfg(test)]
 mod tests {
@@ -135,10 +171,27 @@ mod tests {
         assert_eq!(r, "?mul(8,5))");
     }
 
-    // #[test]
-    // fn test_part2_parser() {
-    //     let (r, list) = part2_parser(TEST2).unwrap();
-    //     println!("{:?}", list);
-    //     assert_eq!(list.len(), 3);
-    // }
+    #[test]
+    fn test_parser() {
+        let (r, v) = part2_parser(TEST2).unwrap();
+        assert_eq!(r, "");
+        assert_eq!(v, vec![(2, 4), (8, 5)]);
+    }
+
+    #[test]
+    fn test_parse_junk() {
+        let test = vec![
+            ("xmul(2,4)", "mul(2,4)"),
+            (
+                "&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5)",
+                "don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5)",
+            ),
+            ("x", ""),
+            ("don't()x?mul(8,5)", ""),
+        ];
+        for (i, res) in test {
+            let (r, _) = parse_junk(i).unwrap();
+            assert_eq!(r, res);
+        }
+    }
 }
