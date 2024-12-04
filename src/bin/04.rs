@@ -76,7 +76,7 @@ impl Grid {
         directions
             .iter()
             .filter(|(dy, dx)| {
-                (0..target.len()).all(|i| {
+                target.iter().enumerate().all(|(i, &byte)| {
                     let (rr, cc) = (
                         (r as i32 + dy * (i as i32 + 1)),
                         (c as i32 + dx * (i as i32 + 1)),
@@ -85,7 +85,7 @@ impl Grid {
                         && rr < self.rows as i32
                         && cc >= 0
                         && cc < self.rows as i32
-                        && self.data[rr as usize][cc as usize] == target[i]
+                        && self.data[rr as usize][cc as usize] == byte
                 })
             })
             .count()
@@ -104,7 +104,13 @@ impl Grid {
                             && y + 1 < self.rows
                             && *x >= 1
                             && x + 1 < self.cols
+                            && (self.data[y - 1][x - 1] == b'M' || self.data[y - 1][x - 1] == b'S')
+                            // distance from 'M' to 'S' is 6
+                            // upper left to lower right
                             && self.data[y - 1][x - 1].abs_diff(self.data[y + 1][x + 1]) == 6
+                            && (self.data[y - 1][x + 1] == b'M' || self.data[y - 1][x + 1] == b'S')
+                            // distance from 'M' to 'S' is 6
+                            // upper right to lower left
                             && self.data[y - 1][x + 1].abs_diff(self.data[y + 1][x - 1]) == 6
                     })
                     .count()
@@ -126,7 +132,6 @@ fn main() -> Result<()> {
         Ok(answer)
     }
 
-    // TODO: Set the expected answer for the test input
     assert_eq!(18, part1(BufReader::new(TEST.as_bytes()))?);
 
     let input_file = BufReader::new(File::open(INPUT_FILE)?);
