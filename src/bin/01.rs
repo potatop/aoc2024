@@ -30,12 +30,12 @@ fn main() -> Result<()> {
                 right.sort();
                 let answer: usize = left
                     .into_iter()
-                    .zip(right.into_iter())
+                    .zip(right)
                     .map(|(l, r)| (l.abs_diff(r)))
                     .sum();
                 Ok(answer)
             }
-            Err(e) => return Err(e),
+            Err(e) => Err(e),
         }
     }
 
@@ -58,7 +58,7 @@ fn main() -> Result<()> {
                     .sum();
                 Ok(answer)
             }
-            Err(e) => return Err(e),
+            Err(e) => Err(e),
         }
     }
 
@@ -75,8 +75,8 @@ fn main() -> Result<()> {
 fn read<R: BufRead>(reader: R) -> Result<(Vec<usize>, Vec<usize>)> {
     Ok(reader
         .lines()
-        .map(|l| {
-            let line = l.unwrap();
+        .map_while(Result::ok)
+        .map(|line| {
             let mut parts = line.split_whitespace();
             (
                 parts.next().unwrap().parse::<usize>().unwrap(),

@@ -30,8 +30,8 @@ fn main() -> Result<()> {
     fn part1<R: BufRead>(reader: R) -> Result<usize> {
         let answer: u32 = reader
             .lines()
-            .flat_map(|l| {
-                let line = l.unwrap();
+            .map_while(Result::ok)
+            .flat_map(|line| {
                 let (_, list) = part1_parser(&line).unwrap();
                 list
             })
@@ -55,7 +55,7 @@ fn main() -> Result<()> {
         let mut string = String::new();
         reader.read_to_string(&mut string)?;
 
-        let (_, list) = part2_parser(&string).expect("cannot read string");
+        let (_, list) = part2_parser(&string).expect("cannot parse string");
 
         let answer: u32 = list.iter().map(|(a, b)| a * b).sum();
 

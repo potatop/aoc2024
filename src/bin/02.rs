@@ -27,10 +27,9 @@ fn main() -> Result<()> {
     fn part1<R: BufRead>(reader: R) -> Result<usize> {
         let answer: usize = reader
             .lines()
-            .map(|x| {
-                let mut iter = x
-                    .as_ref()
-                    .unwrap()
+            .map_while(Result::ok)
+            .map(|line| {
+                let mut iter = line
                     .split_whitespace()
                     .flat_map(|i| i.parse::<i32>())
                     .multipeek();
@@ -38,7 +37,7 @@ fn main() -> Result<()> {
                 while let Some(cur) = iter.next() {
                     if let Some(&n0) = iter.peek() {
                         if let Some(&n1) = iter.peek() {
-                            if let None = is_safe_with_signum(cur, n0, n1) {
+                            if is_safe_with_signum(cur, n0, n1).is_none() {
                                 return false;
                             }
                         }
@@ -65,9 +64,9 @@ fn main() -> Result<()> {
     fn part2<R: BufRead>(reader: R) -> Result<usize> {
         let answer: usize = reader
             .lines()
-            .map(|x| {
-                let mut row = x
-                    .unwrap()
+            .map_while(Result::ok)
+            .map(|line| {
+                let mut row = line
                     .split_whitespace()
                     .flat_map(|i| i.parse::<i32>())
                     .collect::<Vec<i32>>();
@@ -88,7 +87,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn part2_is_safe(row: &mut Vec<i32>) -> bool {
+fn part2_is_safe(row: &mut [i32]) -> bool {
     let mut once = true;
     let mut signum: Option<i32> = None;
     for i in 0..row.len() - 2 {
@@ -149,18 +148,18 @@ mod tests {
 
     #[test]
     fn test_part2_is_safe() {
-        assert!(part2_is_safe(&mut vec![7, 6, 4, 2, 1]));
-        assert!(!part2_is_safe(&mut vec![1, 2, 7, 8, 9]));
-        assert!(!part2_is_safe(&mut vec![9, 7, 6, 2, 1]));
-        assert!(part2_is_safe(&mut vec![1, 3, 2, 4, 5]));
-        assert!(part2_is_safe(&mut vec![8, 6, 4, 4, 1]));
-        assert!(part2_is_safe(&mut vec![1, 3, 6, 7, 9]));
-        assert!(part2_is_safe(&mut vec![2, 1, 3, 4, 5]));
-        assert!(part2_is_safe(&mut vec![1, 6, 3, 4, 5]));
-        assert!(part2_is_safe(&mut vec![1, 2, 3, 4, 9]));
-        assert!(part2_is_safe(&mut vec![3, 5, 7, 9, 8]));
-        assert!(!part2_is_safe(&mut vec![1, 1, 1, 2, 3]));
-        assert!(part2_is_safe(&mut vec![1, 2, 3, 2, 4]));
-        assert!(!part2_is_safe(&mut vec![23, 20, 18, 21, 24]));
+        assert!(part2_is_safe(&mut [7, 6, 4, 2, 1]));
+        assert!(!part2_is_safe(&mut [1, 2, 7, 8, 9]));
+        assert!(!part2_is_safe(&mut [9, 7, 6, 2, 1]));
+        assert!(part2_is_safe(&mut [1, 3, 2, 4, 5]));
+        assert!(part2_is_safe(&mut [8, 6, 4, 4, 1]));
+        assert!(part2_is_safe(&mut [1, 3, 6, 7, 9]));
+        assert!(part2_is_safe(&mut [2, 1, 3, 4, 5]));
+        assert!(part2_is_safe(&mut [1, 6, 3, 4, 5]));
+        assert!(part2_is_safe(&mut [1, 2, 3, 4, 9]));
+        assert!(part2_is_safe(&mut [3, 5, 7, 9, 8]));
+        assert!(!part2_is_safe(&mut [1, 1, 1, 2, 3]));
+        assert!(part2_is_safe(&mut [1, 2, 3, 2, 4]));
+        assert!(!part2_is_safe(&mut [23, 20, 18, 21, 24]));
     }
 }
