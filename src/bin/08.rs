@@ -119,7 +119,7 @@ fn main() -> Result<()> {
                     .iter()
                     .flat_map(|loc| {
                         let mut hashset: HashSet<(usize, usize)> =
-                            HashSet::from_iter(locations.clone().into_iter());
+                            HashSet::from_iter(locations.clone());
                         for another in locations.iter() {
                             if another != loc {
                                 if let (Some(dy), Some(dx)) = (
