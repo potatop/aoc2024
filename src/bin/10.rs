@@ -58,7 +58,7 @@ impl P10 for Grid {
     }
 
     fn up_hill(&self, loc: &(usize, usize)) -> Vec<(usize, usize)> {
-        let height = self.get_at(*loc);
+        let height = self.get(loc);
         [(0, 1), (0, -1), (1, 0), (-1, 0)]
             .iter()
             .filter_map(|direction| {
@@ -66,7 +66,7 @@ impl P10 for Grid {
                     loc.0.checked_add_signed(direction.0),
                     loc.1.checked_add_signed(direction.1),
                 ) {
-                    if y < self.height && x < self.width && height + 1 == self.get(y, x) {
+                    if y < self.height && x < self.width && height + 1 == self.get(&(y, x)) {
                         return Some((y, x));
                     }
                 }
@@ -114,7 +114,7 @@ fn main() -> Result<()> {
             .map(|start| {
                 grid.search_trail(*start)
                     .iter()
-                    .filter(|loc| grid.get(loc.0, loc.1) == b'9')
+                    .filter(|loc| grid.get(&loc) == b'9')
                     .count()
             })
             .sum();
@@ -178,17 +178,18 @@ mod tests {
     #[test]
     fn test_works() {
         let g = Grid::new(BufReader::new(TEST.as_bytes()));
+        println!("{}", g);
         assert_eq!(
             g.search_trail((0, 2))
                 .iter()
-                .filter(|loc| g.get(loc.0, loc.1) == b'9')
+                .filter(|loc| g.get(loc) == b'9')
                 .count(),
             5
         );
         assert_eq!(
             g.search_trail((0, 4))
                 .iter()
-                .filter(|loc| g.get(loc.0, loc.1) == b'9')
+                .filter(|loc| g.get(loc) == b'9')
                 .count(),
             6
         );

@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::io::BufRead;
 
 #[derive(Hash, Eq, PartialEq, Debug, Clone)]
@@ -29,11 +30,18 @@ impl Grid {
         }
     }
 
-    pub fn get(&self, y: usize, x: usize) -> u8 {
-        self.array[y * self.height + x]
+    pub fn get(&self, yx: &Point) -> u8 {
+        self.array[yx.0 * self.height + yx.1]
     }
+}
 
-    pub fn get_at(&self, yx: Point) -> u8 {
-        self.get(yx.0, yx.1)
+impl Display for Grid {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_list()
+            .entries(
+                (0..self.height)
+                    .map(|i| &self.array[self.height * i..self.height * i + self.width]),
+            )
+            .finish()
     }
 }
