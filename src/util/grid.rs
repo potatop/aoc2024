@@ -6,6 +6,7 @@ pub struct Grid {
     pub height: usize,
     pub width: usize,
 }
+pub type Point = (usize, usize);
 
 impl Grid {
     pub fn new<R: BufRead>(reader: R) -> Self {
@@ -30,5 +31,9 @@ impl Grid {
 
     pub fn get(&self, y: usize, x: usize) -> u8 {
         self.array[y * self.height + x]
+    }
+
+    pub fn get_at(&self, yx: Point) -> u8 {
+        self.get(yx.0, yx.1)
     }
 }
