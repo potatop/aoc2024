@@ -4,8 +4,8 @@ pub fn start_day(day: &str) {
 
 // Additional common functions
 pub mod util {
-    pub mod grid;
     pub mod arena_tree;
+    pub mod grid;
 }
 
 #[cfg(test)]
