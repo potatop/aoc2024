@@ -30,7 +30,7 @@ trait P12 {
     fn get_neighbors(&self, start: usize) -> Vec<usize>;
 }
 
-impl P12 for Grid {
+impl P12 for Grid<u8> {
     fn get_connected_region(&self, index: usize) -> Vec<usize> {
         let value = self.array[index];
         let mut v = vec![index];
@@ -91,7 +91,7 @@ fn main() -> Result<()> {
     println!("=== Part 1 ===");
 
     fn part1<R: BufRead>(reader: R) -> Result<usize> {
-        let grid = Grid::new(reader);
+        let grid = Grid::<u8>::from_reader(reader);
         let region_map = grid.build_region_map();
         let region_area = region_map.iter().fold(HashMap::new(), |mut acc, entry| {
             let counter = acc.entry(*entry.1).or_insert(0);
@@ -127,7 +127,7 @@ fn main() -> Result<()> {
     println!("\n=== Part 2 ===");
 
     fn part2<R: BufRead>(reader: R) -> Result<usize> {
-        let grid = Grid::new(reader);
+        let grid = Grid::<u8>::from_reader(reader);
         let region_map = grid.build_region_map();
         let region_area = (0..grid.array.len()).fold(HashMap::new(), |mut acc, index| {
             let region_id = region_map[&index];
@@ -157,7 +157,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn count_sides(grid: Grid, region_map: HashMap<usize, i32>) -> HashMap<i32, usize> {
+fn count_sides(grid: Grid<u8>, region_map: HashMap<usize, i32>) -> HashMap<i32, usize> {
     (0..grid.array.len()).fold(HashMap::new(), |mut acc, index| {
         let region_id = region_map[&index];
 
@@ -253,7 +253,7 @@ mod tests {
 
     #[test]
     fn test_build_region_map() {
-        let grid = Grid::new(BufReader::new(TEST.as_bytes()));
+        let grid = Grid::<u8>::from_reader(BufReader::new(TEST.as_bytes()));
         let region_map = grid.build_region_map();
         assert_eq!(region_map[&0], 0);
         assert_eq!(region_map[&1], 0);
@@ -285,7 +285,7 @@ BBCD
 BBCC
 EEEC
 ";
-        let grid = Grid::new(BufReader::new(test.as_bytes()));
+        let grid = Grid::<u8>::from_reader(BufReader::new(test.as_bytes()));
         let region_map = grid.build_region_map();
         assert_eq!(
             count_sides(grid, region_map),

@@ -29,7 +29,7 @@ trait P10 {
     fn up_hill(&self, loc: &(usize, usize)) -> Vec<(usize, usize)>;
 }
 
-impl P10 for Grid {
+impl P10 for Grid<u8> {
     fn get_trail_heads(&self) -> Vec<(usize, usize)> {
         self.array
             .iter()
@@ -106,7 +106,7 @@ fn main() -> Result<()> {
     println!("=== Part 1 ===");
 
     fn part1<R: BufRead>(reader: R) -> Result<usize> {
-        let grid = Grid::new(reader);
+        let grid = Grid::<u8>::from_reader(reader);
 
         let answer = grid
             .get_trail_heads()
@@ -132,7 +132,7 @@ fn main() -> Result<()> {
     println!("\n=== Part 2 ===");
 
     fn part2<R: BufRead>(reader: R) -> Result<usize> {
-        let grid = Grid::new(reader);
+        let grid = Grid::<u8>::from_reader(reader);
 
         let answer = grid
             .get_trail_heads()
@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_get_trail_heads() {
-        let g = Grid::new(BufReader::new(TEST.as_bytes()));
+        let g = Grid::<u8>::from_reader(BufReader::new(TEST.as_bytes()));
         assert_eq!(
             g.get_trail_heads(),
             vec![
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn test_works() {
-        let g = Grid::new(BufReader::new(TEST.as_bytes()));
+        let g = Grid::<u8>::from_reader(BufReader::new(TEST.as_bytes()));
         println!("{}", g);
         assert_eq!(
             g.search_trail((0, 2))
@@ -197,7 +197,7 @@ mod tests {
 
     #[test]
     fn test_count_distinct_paths() {
-        let g = Grid::new(BufReader::new(TEST.trim().as_bytes()));
+        let g = Grid::<u8>::from_reader(BufReader::new(TEST.trim().as_bytes()));
         let tree = g.count_distinct_paths((0, 2));
 
         assert_eq!(tree, 20);

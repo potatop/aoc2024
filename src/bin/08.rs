@@ -31,7 +31,7 @@ trait P8 {
     fn get_frequency_types(&self) -> HashSet<&u8>;
 }
 
-impl P8 for Grid {
+impl P8 for Grid<u8> {
     fn locate_antennas(&self, f: &u8) -> Vec<(usize, usize)> {
         self.array
             .iter()
@@ -60,7 +60,7 @@ fn main() -> Result<()> {
     println!("=== Part 1 ===");
 
     fn part1<R: BufRead>(reader: R) -> Result<usize> {
-        let grid = Grid::new(reader);
+        let grid = Grid::<u8>::from_reader(reader);
 
         let answer = grid
             .get_frequency_types()
@@ -108,7 +108,7 @@ fn main() -> Result<()> {
     println!("\n=== Part 2 ===");
 
     fn part2<R: BufRead>(reader: R) -> Result<usize> {
-        let grid = Grid::new(reader);
+        let grid = Grid::<u8>::from_reader(reader);
 
         let answer = grid
             .get_frequency_types()
@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let grid = Grid::new(BufReader::new(TEST.as_bytes()));
+        let grid = Grid::<u8>::from_reader(BufReader::new(TEST.as_bytes()));
         assert_eq!(grid.get_frequency_types(), HashSet::from([&b'0', &b'A']));
         assert_eq!(
             grid.locate_antennas(&b'0'),
