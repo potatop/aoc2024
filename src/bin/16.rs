@@ -4,7 +4,6 @@ use code_timing_macros::time_snippet;
 use const_format::concatcp;
 use itertools::Itertools;
 use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
-use std::fmt::Write;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use util::grid::{Grid, Point};
@@ -45,27 +44,49 @@ enum Direction {
 }
 
 impl Direction {
-    fn offset(&self) -> (isize, isize) {
+    fn advance(&self, pt: &Point) -> Option<Point> {
+        use Direction::*;
+        if let (Some(y), Some(x)) = match self {
+            East => (Some(pt.0), pt.1.checked_add_signed(1)),
+            West => (Some(pt.0), pt.1.checked_add_signed(-1)),
+            North => (pt.0.checked_add_signed(-1), Some(pt.1)),
+            South => (pt.0.checked_add_signed(1), Some(pt.1)),
+        } {
+            return Some((y, x));
+        }
+        None
+    }
+
+    fn reverse(&self, pt: &Point) -> Option<Point> {
+        use Direction::*;
+        if let (Some(y), Some(x)) = match self {
+            East => (Some(pt.0), pt.1.checked_add_signed(-1)),
+            West => (Some(pt.0), pt.1.checked_add_signed(1)),
+            North => (pt.0.checked_add_signed(1), Some(pt.1)),
+            South => (pt.0.checked_add_signed(-1), Some(pt.1)),
+        } {
+            return Some((y, x));
+        }
+        None
+    }
+
+    fn turn_left(&self) -> Self {
+        use Direction::*;
         match self {
-            Direction::East => (0, 1),
-            Direction::West => (0, -1),
-            Direction::North => (-1, 0),
-            Direction::South => (1, 0),
+            East => North,
+            West => South,
+            North => West,
+            South => East,
         }
     }
 
-    fn cost(&self, other: &Self) -> usize {
-        if self == other {
-            1
-        } else if *self == Direction::East && *other == Direction::West
-            || (*self == Direction::West && *other == Direction::East)
-            || (*self == Direction::North && *other == Direction::South)
-            || (*self == Direction::South && *other == Direction::North)
-        {
-            // unreachable!();
-            2001
-        } else {
-            1001
+    fn turn_right(&self) -> Self {
+        use Direction::*;
+        match self {
+            East => South,
+            West => North,
+            North => East,
+            South => West,
         }
     }
 }
@@ -94,13 +115,13 @@ impl PartialOrd for State {
 fn dijkstra(
     grid: &Grid<char>,
     start: &State,
-    seen: &mut HashMap<(Point, Direction), usize>,
+    dist: &mut HashMap<(Point, Direction), usize>,
 ) -> Option<usize> {
     // let mut dist = [usize::MAX].repeat(grid.array.len());
     let mut heap = BinaryHeap::from([*start]);
 
     // dist[start.position.0 * grid.width + start.position.1] = 0;
-    seen.insert((start.position, start.direction), 0);
+    dist.insert((start.position, start.direction), 0);
     while let Some(State {
         cost,
         direction,
@@ -110,14 +131,14 @@ fn dijkstra(
         if grid.get(&position) == END {
             return Some(cost);
         }
-        if cost > *seen.get(&(position, direction)).unwrap_or(&usize::MAX) {
+        if cost > *dist.get(&(position, direction)).unwrap_or(&usize::MAX) {
             // if cost > dist[position.0 * grid.width + position.1] {
             continue;
         }
         for mut next in find_next_paths(grid, &direction, &position) {
             next.cost += cost;
             if next.cost
-                < *seen
+                < *dist
                     .get(&(next.position, next.direction))
                     .unwrap_or(&usize::MAX)
             {
@@ -125,7 +146,7 @@ fn dijkstra(
                 heap.push(next);
                 // println!("{:?}", next);
                 // dist[next.position.0 * grid.width + next.position.1] = next.cost;
-                seen.insert((next.position, next.direction), next.cost);
+                dist.insert((next.position, next.direction), next.cost);
             }
         }
     }
@@ -133,31 +154,31 @@ fn dijkstra(
 }
 
 fn find_next_paths(grid: &Grid<char>, direction: &Direction, pos: &Point) -> Vec<State> {
-    // EAST, NORTH, SOUTH, WEST
-    [
-        Direction::North,
-        Direction::South,
-        Direction::West,
-        Direction::East,
-    ]
-    .iter()
-    .filter_map(|d| {
-        if let (Some(y), Some(x)) = (
-            pos.0.checked_add_signed(d.offset().0),
-            pos.1.checked_add_signed(d.offset().1),
-        ) {
-            if grid.get(&(y, x)) == WALL {
+    (0..3)
+        .filter_map(|d| {
+            if d == 0 {
+                if let Some(pt) = direction.advance(pos) {
+                    if grid.get(&pt) != WALL {
+                        return Some(State {
+                            cost: 1,
+                            direction: *direction,
+                            position: pt,
+                        });
+                    }
+                }
                 return None;
             }
-            return Some(State {
-                cost: direction.cost(d),
-                direction: *d,
-                position: (y, x),
-            });
-        }
-        None
-    })
-    .collect_vec()
+            Some(State {
+                cost: 1000,
+                direction: if d == 1 {
+                    direction.turn_left()
+                } else {
+                    direction.turn_right()
+                },
+                position: *pos,
+            })
+        })
+        .collect_vec()
 }
 
 fn main() -> Result<()> {
@@ -194,7 +215,7 @@ fn main() -> Result<()> {
     println!("\n=== Part 2 ===");
 
     fn part2<R: BufRead>(reader: R) -> Result<usize> {
-        let mut grid = Grid::<char>::from_reader_char(reader);
+        let grid = Grid::<char>::from_reader_char(reader);
         let start = grid.find(START).unwrap();
         let seen = &mut HashMap::new();
         let answer = dijkstra(
@@ -236,51 +257,51 @@ fn main() -> Result<()> {
         }) = queue.pop_front()
         {
             path.insert(position);
-            for node in [
-                Direction::North,
-                Direction::South,
-                Direction::West,
-                Direction::East,
-            ]
-            .iter()
-            .filter_map(|d| {
-                if let (Some(y), Some(x)) = (
-                    position.0.checked_add_signed(-d.offset().0),
-                    position.1.checked_add_signed(-d.offset().1),
-                ) {
-                    for dd in [
-                        Direction::North,
-                        Direction::South,
-                        Direction::West,
-                        Direction::East,
-                    ] {
-                        if let Some(&so) = seen.get(&((y, x), dd)) {
-                            if cost == so + dd.cost(&direction) {
-                                return Some(State {
-                                    cost: so,
-                                    direction: dd,
-                                    position: (y, x),
-                                });
-                            }
+            if position == start {
+                break;
+            }
+
+            for node in (0..3).filter_map(|d| {
+                if d == 0 {
+                    if let Some(pt) = direction.reverse(&position) {
+                        if grid.get(&pt) != WALL {
+                            return Some(State {
+                                cost: cost - 1,
+                                direction,
+                                position: pt,
+                            });
                         }
                     }
+                    return None;
                 }
-                None
+                cost.checked_add_signed(-1000).map(|c| State {
+                    cost: c,
+                    direction: if d == 1 {
+                        direction.turn_left()
+                    } else {
+                        direction.turn_right()
+                    },
+                    position,
+                })
             }) {
-                queue.push_back(node);
+                if let Some(so) = seen.get(&(node.position, node.direction)) {
+                    if *so == node.cost {
+                        queue.push_back(node);
+                    }
+                }
             }
         }
-        for node in &path {
-            grid.set(node, 'O');
-        }
-        let s = (0..grid.height).fold(String::new(), |mut output, i| {
-            for c in &grid.array[grid.width * i..grid.width * (i + 1)] {
-                let _ = write!(output, "{}", c);
-            }
-            let _ = writeln!(output);
-            output
-        });
-        println!("{}", s);
+        // for node in &path {
+        //     grid.set(node, 'O');
+        // }
+        // let s = (0..grid.height).fold(String::new(), |mut output, i| {
+        //     for c in &grid.array[grid.width * i..grid.width * (i + 1)] {
+        //         let _ = write!(output, "{}", c);
+        //     }
+        //     let _ = writeln!(output);
+        //     output
+        // });
+        // println!("{}", s);
         Ok(path.len())
     }
 

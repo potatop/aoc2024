@@ -114,7 +114,7 @@ fn main() -> Result<()> {
             .map(|start| {
                 grid.search_trail(*start)
                     .iter()
-                    .filter(|loc| grid.get(&loc) == b'9')
+                    .filter(|loc| grid.get(loc) == b'9')
                     .count()
             })
             .sum();
