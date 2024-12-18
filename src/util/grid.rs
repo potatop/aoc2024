@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::fmt::Write;
 use std::fmt::{Debug, Display, Formatter};
 use std::io::BufRead;
@@ -12,7 +13,7 @@ pub type Point = (usize, usize);
 
 impl<T> Grid<T>
 where
-    T: Default + Copy,
+    T: Default + Copy + PartialEq,
 {
     pub fn new(v: Vec<T>, h: usize, w: usize) -> Self {
         Self {
@@ -37,6 +38,22 @@ where
         Grid::new(v, h, w)
     }
 
+    pub fn from_reader_char<R: BufRead>(reader: R) -> Grid<char> {
+        let mut w = 0;
+        let mut h = 0;
+        let mut v = Vec::new();
+        for s in reader.lines().map_while(Result::ok) {
+            if w == 0 {
+                w = s.len();
+            } else {
+                assert_eq!(w, s.len());
+            }
+            v.extend(s.chars());
+            h += 1;
+        }
+        Grid::new(v, h, w)
+    }
+
     pub fn get(&self, yx: &Point) -> T {
         self.array[yx.0 * self.width + yx.1]
     }
@@ -46,6 +63,12 @@ where
 
     pub fn map_index(&self, i: usize) -> Point {
         (i / self.width, i % self.width)
+    }
+
+    pub fn find(&self, val: T) -> Option<Point> {
+        (0..self.height)
+            .cartesian_product(0..self.width)
+            .find(|pt| self.get(pt) == val)
     }
 }
 
