@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 #[derive(Debug)]
 pub struct Node<T>
 where
@@ -5,8 +7,8 @@ where
 {
     pub idx: usize,
     pub val: T,
-    // parent: Option<usize>,
-    pub children: Vec<usize>,
+    // pub parent: Option<usize>,
+    pub children: HashSet<usize>,
 }
 
 #[derive(Debug, Default)]
@@ -26,7 +28,7 @@ where
             idx,
             val,
             // parent: None,
-            children: vec![],
+            children: HashSet::new(),
         }
     }
 }
